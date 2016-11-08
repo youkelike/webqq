@@ -5,7 +5,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User)
     name = models.CharField(max_length=32)
     user_groups = models.ManyToManyField('UserGroup')
-    friends = models.ManyToManyField('self',related_name='my_friends',blank=True,symmetrical=False)
+    friends = models.ManyToManyField('self',related_name='my_friends',blank=True)
     def __str__(self):
         return self.name
 
@@ -15,7 +15,7 @@ class UserGroup(models.Model):
     def __str__(self):
         return self.name
 
-class QQGroup(models.Model):
+class QqGroup(models.Model):
     name = models.CharField(max_length=64)
     founder = models.ForeignKey(UserProfile)
     brief = models.TextField(max_length=1024,default='nothing...')

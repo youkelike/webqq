@@ -62,3 +62,62 @@ body {
   .btn-toolbar{
     margin-bottom:5px;
   }
+
+#tab-menu li{
+  float:none;
+}
+#tab-menu li.active>a, #tab-menu li.active>a:hover, #tab-menu li.active>a:focus{
+  border-right-color: transparent;
+  border-bottom-color: #ddd;
+}
+
+#tab-content>.active{
+  background-color: #fff;
+  height: 500px;
+}
+
+.contact-box,.contact-list,.dialog-box{
+  height:100%
+}
+.contact-list{
+  border: 1px solid royalblue;
+}
+.dialog-box{
+  border: 1px solid yellowgreen;
+}
+.contact-list-head{
+  overflow: hidden;
+    margin-bottom: 10px;
+    margin-top: 5px;
+}
+.contact-list-head>div{
+  padding:0px;
+}
+
+.dialog-box-head{
+  height: 10%;
+  background-color:#b9def0;
+}
+.dialog-box-content{
+  height: 70%;
+  background-color:#adadad;
+  overflow: auto;
+}
+.dialog-box-utils{
+  height: 5%;
+  background-color:#c0a16b;
+}
+.dialog-box-sendmsg{
+  height:15%;
+}
+.dialog-box-sendmsg textarea{
+  height: 100%;
+  width: 100%;
+  background-color: transparent;;
+  resize: none;
+}
+
+#contact-box .dialog-box,#contact-box .contact-list{
+  padding-left:0px;
+  padding-right: 0px;
+}
