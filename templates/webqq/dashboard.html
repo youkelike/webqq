@@ -5,58 +5,111 @@
 {% block page-content %}
 <!-- Nav tabs -->
 {% csrf_token %}
-<div class="col-sm-3" id="tab-menu">
-<ul class="nav nav-tabs" role="tablist">
-  <li role="presentation" class="active"><a href="#contact-box" role="tab" data-toggle="tab">联系人</a></li>
-  <li role="presentation"><a href="#contact-group-box" role="tab" data-toggle="tab">群组</a></li>
-  <li role="presentation"><a href="#config" role="tab" data-toggle="tab">配置</a></li>
-</ul>
-</div>
-<div class="col-sm-9">
-<!-- Tab panes -->
-<div class="tab-content" id="tab-content">
-  <div role="tabpanel" class="tab-pane active" id="contact-box">
-      <div class="contact-box">
-          <div class="contact-list col-md-3">
-              <div class="contact-list-head">
-                  <div class="col-md-9">
-                    <input type="text" name="search" class="form-control" placeholder="输入好友昵称">
-                  </div>
-                  <div class="col-md-3 search-button">
-                      <button type="submit" id="btn-submit" class="btn btn-default">
-                        <span class="glyphicon glyphicon-search"></span>
-                    </button>
-                  </div>
-              </div>
-              <div id="contact-list" class="contact-list-content list-group">
+<div class="row">
+  <div class="left_sidebar col-lg-3">
+    <!--tab -->
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-3 col-md-3 col-sm-8 col-xs-9 bhoechie-tab-container" id="left-menu">
+          <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 bhoechie-tab-menu">
+            <div class="list-group">
+              <!-- 最近 -->
+              <a href="#" data-tab="recent_contacts" class="list-group-item active text-center">
+                <h4><i class="glyphicon glyphicon-comment"></i></h4>
+                <br/>最近</a>
+              <!-- 联系人 -->
+              <a href="#" data-tab="contacts" class="list-group-item text-center">
+                <h4>
+                  <i class="glyphicon glyphicon-user"></i>
+                  <span contact_type="single_contact">
+                    <i class="fa fa-commenting fa-2 myClass hide" style="color: darkorange"></i>
+                  </span>
+                </h4>
+                <br/>联系人</a>
+              <!-- 群组 -->
+              <a href="#" data-tab="contacts_groups" class="list-group-item text-center">
+                <h4>
+                  <i class="glyphicon glyphicon-cloud"></i>
+                  <span contact_type="group">
+                    <i class="fa fa-commenting fa-2 myClass hide" style="color: darkorange"></i>
+                  </span>
+                </h4>
+                <br/>群组</a>
+            </div>
+          </div>
+          <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 bhoechie-tab">
+            <!-- 最近 -->
+            <div id="recent_contacts" class="bhoechie-tab-content active">
 
+            </div>
+            <!-- 联系人 -->
+            <div id="contacts" class="bhoechie-tab-content ">
+              <input type="text" class="form-control" placeholder="Search for friend">
+              <div id="contact-list" class="list-group">
                   {% for contact in request.user.userprofile.friends.select_related %}
-                  <a contact-name="{{ contact.name }}" contact-id="{{ contact.id }}" contact-type="single" class="list-group-item active" href="#">
-                    <span style="background-color:orangered" class="badge hide">0</span>
-                    {{ contact.name }}
+                  <a status="false" contact_id="{{ contact.id }}" contact_name="{{ contact.name }}" contact_type="single" class="list-group-item contact-item">
+                      <span><i class="glyphicon glyphicon-fire"></i>{{ contact.name }}</span>
+                      <span class="pull-right badge hide">0</span>
                   </a>
                   {% endfor %}
               </div>
+            </div>
+            <!-- 群组 -->
+            <div id="contacts_groups" class="bhoechie-tab-content ">
+              <input type="text" class="form-control" placeholder="Search for group">
+              <ul id="group-list" class="list-unstyled">
+                  {% for group in request.user.userprofile.group_members.select_related %}
+                  <li status="false"  contact_type="group" contact_id="{{ group.id }}" contact_name="{{ group.name }}" class="contact-item">
+                      <i class="toggle-members glyphicon glyphicon-plus"></i>
+                      <span>{{ group.name }}({{ group.members.select_related|length }})</span>
+                      <span class="pull-right badge hide">0</span>
+                       <ul class="list-group hide group-members">
+                       {% for member in group.members.select_related %}
+                           {% if request.user.userprofile.id != member.id %}
+                           <li class="list-group-item" contact_type="single" contact_id="{{ member.id }}" contact_name="{{ member.name }}">
+                               <i class="glyphicon glyphicon-user"></i>{{ member.name }}
+                               {% if member in request.user.userprofile.friends.select_related %}
+                               <i class="glyphicon glyphicon-heart pull-right friend"></i>
+                               {% else %}
+                               <i class="glyphicon glyphicon-heart pull-right"></i>
+                               {% endif %}
+                           </li>
+                           {% endif %}
+                       {% endfor %}
+                       </ul>
+                  </li>
+                  {% endfor %}
+              </ul>
+            </div>
+
           </div>
-          <div class="dialog-box col-md-9">
-              <div class="dialog-box-head">
-                  <span contact-id="-1" contact-type="single"></span>
-              </div>
-              <div class="dialog-box-content">
-              </div>
-              <div class="dialog-box-utils">
-                  alex chating...
-              </div>
-              <div class="dialog-box-sendmsg">
-                  <textarea name="msg"></textarea>
-              </div>
-          </div>
+        </div>
       </div>
-  </div>
-  <div role="tabpanel" class="tab-pane" id="contact-group-box">aaa</div>
-  <div role="tabpanel" class="tab-pane" id="config">bbb</div>
+    </div>
+    <!--end tab--></div>
+  <!--end left_sidebar-->
+  <div class="content col-lg-9">
+    <div class="col-lg-10 col-md-10 bhoechie-tab-container dialog">
+      <div id="dialog-header-msg" class="dialog-header">
+        <span contact_id='100' contact_type="group">gg</span></div>
+      <div id="dialog-content-box" class="dialog-content">
+
+      </div>
+      <div class="dialog-send-box">
+        <div class="msg-send-bar">
+          <span><i class="fa fa-font fa-2"></i></span>
+          <span><i class="fa fa-picture-o fa-2"></i></span>
+          <span><i class="fa fa-smile-o fa-2"></i></span>
+          <span><i class="fa fa-clock-o fa-2"></i></span>
+        </div>
+        <textarea id="msg_input" name="msg" class="" placeholder="输入消息..."></textarea>
+        <div id="file-upload-container" class="hide">
+          <input id="file_upload" name="filename" type="file" multiple class="file-loading"></div>
+      </div>
+    </div>
+    <!--end row--></div>
 </div>
-</div>
+<!--end content--></div>
 
 {% endblock %}
 {% block script %}
@@ -66,12 +119,30 @@ all_dialog_sessions = {
     'group':{}
 }
 $(function(){
-    refresh_msgs = setInterval(function(){
+    /*refresh_msgs = setInterval(function(){
         get_new_msg();
-    },3000);
+    },3000);*/
+    get_new_msg();
 
-    $('#contact-list a').click(function(){
+    /*处理左侧菜单标签切换*/
+    $('.list-group').delegate('a','click',function(){
+        var id = $(this).attr('data-tab');
         $(this).addClass('active').siblings().removeClass('active');
+        $('#'+id).addClass('active').siblings().removeClass('active');
+    });
+    /*群成员的显示隐藏*/
+    $('#group-list').delegate('.toggle-members','click',function(){
+        if($(this).hasClass('glyphicon-plus')){
+            $(this).removeClass('glyphicon-plus').addClass('glyphicon-minus')
+            $(this).parent().find('.list-group').removeClass('hide')
+        }else{
+            $(this).removeClass('glyphicon-minus').addClass('glyphicon-plus')
+            $(this).parent().find('.list-group').addClass('hide')
+        }
+    })
+    /*聊天窗的切换*/
+    $('#left-menu ').delegate('.contact-item','dblclick',function(){
+        //$(this).addClass('active').siblings().removeClass('active');
         /*重置消息数量提示*/
         console.log($(this).find('.badge').html())
         $(this).find('.badge').addClass('hide').html('0')
@@ -84,11 +155,18 @@ $(function(){
     $(document).delegate('textarea','keydown',function(e){
         if(e.which == 13){
             var msg_text = $('textarea').val();
+            var current_contact_id = $('#dialog-header-msg span').attr('contact_id');
+            var current_contact_type = $('#dialog-header-msg span').attr('contact_type');
             if($.trim(msg_text).length > 0){
                 console.log(msg_text)
-                send_msg(msg_text);
-                add_msg_into_box(msg_text);
-                $('textarea').val('');
+                if(current_contact_type == 'single'){
+                    send_msg(msg_text);/*ajax消息到后台*/
+                }else if(current_contact_type == 'group'){
+                    send_msg(msg_text,current_contact_id);/*ajax消息到后台*/
+                }
+
+                add_msg_into_box(msg_text);/*添加消息到聊天窗口*/
+                $('textarea').val('');/*输入位置清空*/
             }
         }
     })
@@ -96,80 +174,124 @@ $(function(){
 
 /*定时从后台获取消息*/
 function get_new_msg(){
-    var current_contact_id = $('.dialog-box-head span').attr('contact-id');
-    var current_contact_name = $('.dialog-box-head span').text();
+
+    //var current_contact_name = $('#dialog-header-msg span').text();
     $.get('{% url "get_new_msg" %}',{'uid':'{{ request.user.userprofile.id }}'},function(callback){
+        var current_contact_id = $('#dialog-header-msg span').attr('contact_id');
+        var current_contact_type = $('#dialog-header-msg span').attr('contact_type');
         console.log(callback)
+        console.log(current_contact_id)
+        console.log(current_contact_type)
+
         callback = JSON.parse(callback);
         $.each(callback,function(index,msg){
-            if(msg.from_id == current_contact_id){/*如果消息来自当前聊天窗中的对话用户*/
-                var msg_div = '<div class="pull">'+
-                    '<span>'+current_contact_name+'</span>'+
-                    '<span>'+msg.date+'</span>'+
-                    '<p>'+msg.msg+'</p>'+
-                    '</div>';
-                $('.dialog-box-content').append(msg_div);
-                $('.dialog-box-content').animate({
-                    scrollTop: $('.dialog-box-content')[0].scrollHeight},500);
+            /*还要做群组还是私聊的判断*/
+            if((msg.from_id == current_contact_id && msg.contact_type == 'single') || (msg.group_id == current_contact_id && msg.contact_type == 'group') ){/*如果消息来自当前聊天窗中的对话用户*/
+                var msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
+                    '<i class="glyphicon glyphicon-user"></i></div></div><div>' +
+                    '<p><span class="msg-text-head">'+msg.from_name+'</span>'+
+                    '<span class="msg-text-head">'+msg.date+'</span></p>'+
+                    '<p class="msg-text">'+msg.msg+'</p></div>'
+
+                $('#dialog-content-box').append(msg_div);
+                $('#dialog-content-box').animate({
+                    scrollTop: $('#dialog-content-box')[0].scrollHeight},500);
             }else{/*如果消息不是当前聊天窗中的对话用户*/
-                var msg_count_ele = $('#contact-list a[contact-id="'+msg.from_id+'"] span')
+                /*消息提示数增加*/
+                console.log(msg)
+                if(msg.contact_type == 'single') {/*要区分群组和单个用户*/
+                    var msg_count_ele = $('#contact-list .contact-item[contact_id="' + msg.from_id + '"] .badge');
+                }else if(msg.contact_type == 'group'){
+                    var msg_count_ele = $('#contacts_groups .contact-item[contact_id="' + msg.group_id + '"] .badge');
+                }
+                console.log(msg_count_ele)
                 msg_count_ele.text(parseInt(msg_count_ele.text()) + 1);
                 msg_count_ele.removeClass('hide');
+                /*暂存消息*/
+                var msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
+                    '<i class="glyphicon glyphicon-user"></i></div></div><div>' +
+                    '<p><span class="msg-text-head">'+msg.from_name+'</span>'+
+                    '<span class="msg-text-head">'+msg.date+'</span></p>'+
+                    '<p class="msg-text">'+msg.msg+'</p></div>'
+
+                if(msg.contact_type == 'single'){
+                    var old_session_content = dialog_handle(msg.from_id,msg.contact_type,'load');
+                    var new_session_content = old_session_content + msg_div;
+                    dialog_handle(msg.from_id,msg.contact_type,'refresh',new_session_content)
+                }else if(msg.contact_type == 'group'){
+                    var old_session_content = dialog_handle(msg.group_id,msg.contact_type,'load');
+                    var new_session_content = old_session_content + msg_div;
+                    dialog_handle(msg.group_id,msg.contact_type,'refresh',new_session_content)
+                }
+
+
             }
+
+
         });
+
+        get_new_msg();
     });
 }
 
 /*在消息窗中显示自己发送的消息*/
 function add_msg_into_box(msg){
-    var msg_div = '<div class="pull right">'+
-                    '<span>{{ request.user.userprofile.name }}</span>'+
-                    '<span>'+new Date().toLocaleTimeString()+'</span>'+
-                    '<p>'+msg+'</p>'+
-                    '</div>';
-    $('.dialog-box-content').append(msg_div);
-    $('.dialog-box-content').animate({
-        scrollTop: $('.dialog-box-content')[0].scrollHeight},500);
+    var msg_div = '<div class="timeline-stat pull-right"><div class="timeline-icon">'+
+                    '<i class="glyphicon glyphicon-user"></i>'+
+                    '</div></div><div align="right" class="msg_box_right">' +
+                    '<p><span class="msg-text-head">{{ request.user.userprofile.name }}</span>'+
+                    '<span class="msg-text-head">'+new Date().toLocaleTimeString()+'</span></p>'+
+                    '<p class="msg-text-right">'+msg+'</p></div>'
+
+    $('#dialog-content-box').append(msg_div);
+    $('#dialog-content-box').animate({
+        scrollTop: $('#dialog-content-box')[0].scrollHeight},500);
 }
 
 /*发送消息到后台*/
-function send_msg(msg){
+function send_msg(msg,group_id){
     var msg_dic = {
         'from_id': '{{ request.user.userprofile.id }}',
-        'to_id': $('.dialog-box-head span').attr('contact-id'),
-        'contact_type': $('.dialog-box-head span').attr('contact-type'),
+        'to_id': $('#dialog-header-msg span').attr('contact_id'),
+        'from_name':'{{ request.user.userprofile.name }}',
+        'contact_type': $('#dialog-header-msg span').attr('contact_type'),
         'msg': msg
+    }
+    if(group_id>0){
+        msg_dic['group_id'] = group_id;
     }
     $.post('{% url "chat_send_msg" %}',{'data':JSON.stringify(msg_dic),'csrfmiddlewaretoken':$('input[name=csrfmiddlewaretoken]').val()},function(callback){
        console.log(callback)
     });
 }
 
+/*切换聊天窗*/
 function switch_chatbox(ele) {
-    var current_dialog_uid = $(ele).attr('contact-id'),
-        current_dialog_type = $(ele).attr('contact-type'),
-        current_dialog_title = $(ele).attr('contact-name'),
-        dialog_head_html = '<span contact-id="'+current_dialog_uid+'" contact-type="'+current_dialog_type+'">'+current_dialog_title+'</span>';
-    var old_session_uid = $('.dialog-box-head span').attr('contact-id'),
-        old_session_type = $('.dialog-box-head span').attr('contact-type');
+    var current_dialog_uid = $(ele).attr('contact_id'),
+        current_dialog_type = $(ele).attr('contact_type'),
+        current_dialog_title = $(ele).attr('contact_name');
+    var old_session_uid = $('#dialog-header-msg span').attr('contact_id'),
+        old_session_type = $('#dialog-header-msg span').attr('contact_type');
 
     dialog_handle(old_session_uid,old_session_type,'dump');
-    $('.dialog-box-content').html(dialog_handle(current_dialog_uid,current_dialog_type,'load'));
-    $('.dialog-box-head').html(dialog_head_html)
+    $('#dialog-content-box').html(dialog_handle(current_dialog_uid,current_dialog_type,'load'));
+    $('#dialog-header-msg span').attr('contact_id',current_dialog_uid).attr('contact_type',current_dialog_type).html(current_dialog_title)
 
 }
 
 /*只是数据的存和取，不混入界面操作*/
-function dialog_handle(contact_id,contact_type,action){
-    if(action == 'dump'){
-        var current_dialog_content = $('.dialog-box-content').html();
+function dialog_handle(contact_id,contact_type,action,data){
+    if(action == 'dump'){/*把当前会话保存到消息session*/
+        var current_dialog_content = $('#dialog-content-box').html();
         all_dialog_sessions[contact_type][contact_id] = current_dialog_content;
-    }else if(action == 'load'){
+    }else if(action == 'load'){/*获取消息session*/
         var new_dialog_content = '';
         if(contact_id in all_dialog_sessions[contact_type]){
             new_dialog_content = all_dialog_sessions[contact_type][contact_id];
         }
         return new_dialog_content;
+    }else if(action == 'refresh'){/*直接更新消息session*/
+        all_dialog_sessions[contact_type][contact_id] = data
     }
 }
 
