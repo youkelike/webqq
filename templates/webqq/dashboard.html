@@ -14,11 +14,11 @@
           <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 bhoechie-tab-menu">
             <div class="list-group">
               <!-- 最近 -->
-              <a href="#" data-tab="recent_contacts" class="list-group-item active text-center">
-                <h4><i class="glyphicon glyphicon-comment"></i></h4>
+              <a href="#" data-tab="recent_contacts" class="list-group-item text-center">
+                <h4><i class="glyphicon glyphicon-comment blink-ico"></i></h4>
                 <br/>最近</a>
               <!-- 联系人 -->
-              <a href="#" data-tab="contacts" class="list-group-item text-center">
+              <a href="#" data-tab="contacts" class="list-group-item active text-center">
                 <h4>
                   <i class="glyphicon glyphicon-user"></i>
                   <span contact_type="single_contact">
@@ -39,11 +39,13 @@
           </div>
           <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 bhoechie-tab">
             <!-- 最近 -->
-            <div id="recent_contacts" class="bhoechie-tab-content active">
+            <div id="recent_contacts" class="bhoechie-tab-content">
+                <div id="recent_contact_list" class="list-group">
 
+                </div>
             </div>
             <!-- 联系人 -->
-            <div id="contacts" class="bhoechie-tab-content ">
+            <div id="contacts" class="bhoechie-tab-content active">
               <input type="text" class="form-control" placeholder="Search for friend">
               <div id="contact-list" class="list-group">
                   {% for contact in request.user.userprofile.friends.select_related %}
@@ -71,7 +73,7 @@
                                {% if member in request.user.userprofile.friends.select_related %}
                                <i class="glyphicon glyphicon-heart pull-right friend"></i>
                                {% else %}
-                               <i class="glyphicon glyphicon-heart pull-right"></i>
+                               <i class="glyphicon glyphicon-heart pull-right" title="加好友"></i>
                                {% endif %}
                            </li>
                            {% endif %}
@@ -91,16 +93,17 @@
   <div class="content col-lg-9">
     <div class="col-lg-10 col-md-10 bhoechie-tab-container dialog">
       <div id="dialog-header-msg" class="dialog-header">
+        <i class="glyphicon glyphicon-user"></i>
         <span contact_id='100' contact_type="group">gg</span></div>
       <div id="dialog-content-box" class="dialog-content">
 
       </div>
       <div class="dialog-send-box">
         <div class="msg-send-bar">
-          <span><i class="fa fa-font fa-2"></i></span>
-          <span><i class="fa fa-picture-o fa-2"></i></span>
-          <span><i class="fa fa-smile-o fa-2"></i></span>
-          <span><i class="fa fa-clock-o fa-2"></i></span>
+          <span><i class="glyphicon glyphicon-font"></i></span>
+          <span><i class="glyphicon glyphicon-picture"></i></span>
+          <span><i class="glyphicon glyphicon-gift"></i></span>
+          <span><i class="glyphicon glyphicon-shopping-cart"></i></span>
         </div>
         <textarea id="msg_input" name="msg" class="" placeholder="输入消息..."></textarea>
         <div id="file-upload-container" class="hide">
@@ -116,7 +119,8 @@
 <script>
 all_dialog_sessions = {
     'single':{},
-    'group':{}
+    'group':{},
+    'friend_request':{},
 }
 $(function(){
     /*refresh_msgs = setInterval(function(){
@@ -150,6 +154,12 @@ $(function(){
         /*切换聊天对象*/
         switch_chatbox(this);
     });
+    /*加好友*/
+    $('#group-list').delegate('.glyphicon-heart','click',function(){
+        if(!$(this).hasClass('friend')){
+            send_friend_request(this)
+        }
+    });
 
     /*捕获按键,发送消息*/
     $(document).delegate('textarea','keydown',function(e){
@@ -157,80 +167,166 @@ $(function(){
             var msg_text = $('textarea').val();
             var current_contact_id = $('#dialog-header-msg span').attr('contact_id');
             var current_contact_type = $('#dialog-header-msg span').attr('contact_type');
+            var current_contact_name = $('#dialog-header-msg span').attr('contact_name');
+
             if($.trim(msg_text).length > 0){
                 console.log(msg_text)
                 if(current_contact_type == 'single'){
                     send_msg(msg_text);/*ajax消息到后台*/
                 }else if(current_contact_type == 'group'){
-                    send_msg(msg_text,current_contact_id);/*ajax消息到后台*/
+                    send_msg(msg_text,current_contact_id,current_contact_name);/*ajax消息到后台*/
                 }
 
                 add_msg_into_box(msg_text);/*添加消息到聊天窗口*/
                 $('textarea').val('');/*输入位置清空*/
             }
         }
-    })
+    });
+
+    /*接受好友请求*/
+    $('#dialog-content-box').delegate('.accept-friend','click',function(){
+        console.log('accept friend');
+        accept_friend_request();
+    });
 });
 
 /*定时从后台获取消息*/
 function get_new_msg(){
-
     //var current_contact_name = $('#dialog-header-msg span').text();
     $.get('{% url "get_new_msg" %}',{'uid':'{{ request.user.userprofile.id }}'},function(callback){
-        var current_contact_id = $('#dialog-header-msg span').attr('contact_id');
-        var current_contact_type = $('#dialog-header-msg span').attr('contact_type');
-        console.log(callback)
-        console.log(current_contact_id)
-        console.log(current_contact_type)
-
         callback = JSON.parse(callback);
-        $.each(callback,function(index,msg){
-            /*还要做群组还是私聊的判断*/
-            if((msg.from_id == current_contact_id && msg.contact_type == 'single') || (msg.group_id == current_contact_id && msg.contact_type == 'group') ){/*如果消息来自当前聊天窗中的对话用户*/
-                var msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
+
+        /*处理对话消息*/
+        new_msg_handler(callback.msg_list)
+        /*更新好友在线状态*/
+        friends_online_refresh(callback.contact_dic.friends)
+        /*更新所属群信息*/
+        groups_refresh(callback.contact_dic.groups)
+
+        get_new_msg();
+    });
+}
+
+/*更新好友在线状态*/
+function friends_online_refresh(online_firend_list){
+    console.log(online_firend_list)
+    $('#contact-list .contact-item .glyphicon-fire').removeClass('online');
+    $.each(online_firend_list,function(index,friend){
+        $('#contact-list .contact-item[contact_id="'+friend.id+'"] .glyphicon-fire').addClass('online');
+    })
+}
+
+/*更新所属群信息*/
+function groups_refresh(group_list){
+    console.log(group_list)
+}
+
+/*往最近会话里面添加条目*/
+function add_recent_item(to_id,to_name,contact_type,group_id,group_name){
+    var name = to_name;
+    var id = to_id;
+    var icon_class_name = 'glyphicon-user';
+    if(contact_type == 'group'){
+        icon_class_name = 'glyphicon-comment';
+        name = group_name;
+        id = group_id;
+    }
+
+    /*判断会话是否已经存在,不存在就添加*/
+    if($('#recent_contact_list .contact-'+contact_type+'[contact_id="'+id+'"]').length == 0){
+        if(contact_type == 'friend_request'){/*对添加好友请求特殊处理*/
+            name = '来自'+name+'的好友请求';
+            icon_class_name = 'glyphicon-hand-right';
+        }
+        var item_div = '<a status="false" '+
+                        'contact_id="'+id+'" contact_name="'+name+'" contact_type="'+contact_type+'" '+
+                        'class="list-group-item contact-item contact-'+contact_type+'">'+
+                        '<span><i class="glyphicon '+icon_class_name+'"></i>'+name+'</span>'+
+                        '<span class="pull-right badge hide">0</span></a>';
+        $('#recent_contact_list').append(item_div);
+    }
+}
+
+/*处理对话消息*/
+function new_msg_handler(msg_list){
+    var current_contact_id = $('#dialog-header-msg span').attr('contact_id');
+    var current_contact_type = $('#dialog-header-msg span').attr('contact_type');
+    console.log(msg_list)
+    console.log(current_contact_id)
+    console.log(current_contact_type)
+
+    /*新消息提示*/
+    if(msg_list.length>0){
+        blink('.blink-ico',5,500);
+    }
+
+    $.each(msg_list,function(index,msg){
+        /*往最近会话里面添加条目*/
+        add_recent_item(msg.from_id,msg.from_name,msg.contact_type,msg.group_id,msg.group_name)
+
+        /*还要做群组还是私聊的判断*/
+        if((msg.from_id == current_contact_id && msg.contact_type == 'single') || (msg.group_id == current_contact_id && msg.contact_type == 'group') ){/*如果消息来自当前聊天窗中的对话用户*/
+            var msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
+                '<i class="glyphicon glyphicon-user"></i></div></div><div>' +
+                '<p><span class="msg-text-head">'+msg.from_name+'</span>'+
+                '<span class="msg-text-head">'+msg.date+'</span></p>'+
+                '<p class="msg-text">'+msg.msg+'</p></div>'
+
+            $('#dialog-content-box').append(msg_div);
+            $('#dialog-content-box').animate({
+                scrollTop: $('#dialog-content-box')[0].scrollHeight},500);
+        }else{/*如果消息不是当前聊天窗中的对话用户*/
+            /*消息提示数增加*/
+            console.log(msg)
+            if(msg.contact_type == 'single') {/*要区分群组和单个用户*/
+                var msg_count_ele = $('#recent_contact_list .contact-single[contact_id="' + msg.from_id + '"] .badge');
+            }else if(msg.contact_type == 'group'){
+                var msg_count_ele = $('#recent_contact_list .contact-group[contact_id="' + msg.group_id + '"] .badge');
+            }else if(msg.contact_type == 'friend_request'){
+                var msg_count_ele = $('#recent_contact_list .contact-friend_request[contact_id="' + msg.from_id + '"] .badge');
+            }
+            console.log(msg_count_ele)
+            msg_count_ele.text(parseInt(msg_count_ele.text()) + 1);
+            msg_count_ele.removeClass('hide');
+
+            /*暂存消息*/
+            var msg_div = '';
+            if(msg.contact_type == 'friend_request'){
+                msg_content_div ='<div class="modal-content msg-text"><div class="modal-header"><h4 class="modal-title">好友申请</h4></div>'+
+                                    '<div class="modal-body"><p>One fine body…</p> </div>'+
+                                    '<div class="modal-footer"> <button type="button" class="btn btn-primary accept-friend">接受</button> </div> </div>';
+                msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
                     '<i class="glyphicon glyphicon-user"></i></div></div><div>' +
                     '<p><span class="msg-text-head">'+msg.from_name+'</span>'+
                     '<span class="msg-text-head">'+msg.date+'</span></p>'+
-                    '<p class="msg-text">'+msg.msg+'</p></div>'
-
-                $('#dialog-content-box').append(msg_div);
-                $('#dialog-content-box').animate({
-                    scrollTop: $('#dialog-content-box')[0].scrollHeight},500);
-            }else{/*如果消息不是当前聊天窗中的对话用户*/
-                /*消息提示数增加*/
-                console.log(msg)
-                if(msg.contact_type == 'single') {/*要区分群组和单个用户*/
-                    var msg_count_ele = $('#contact-list .contact-item[contact_id="' + msg.from_id + '"] .badge');
-                }else if(msg.contact_type == 'group'){
-                    var msg_count_ele = $('#contacts_groups .contact-item[contact_id="' + msg.group_id + '"] .badge');
-                }
-                console.log(msg_count_ele)
-                msg_count_ele.text(parseInt(msg_count_ele.text()) + 1);
-                msg_count_ele.removeClass('hide');
-                /*暂存消息*/
-                var msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
+                    msg_content_div+'</div>';
+            }else{
+                msg_div = '<div class="timeline-stat"><div class="timeline-icon">'+
                     '<i class="glyphicon glyphicon-user"></i></div></div><div>' +
                     '<p><span class="msg-text-head">'+msg.from_name+'</span>'+
                     '<span class="msg-text-head">'+msg.date+'</span></p>'+
-                    '<p class="msg-text">'+msg.msg+'</p></div>'
-
-                if(msg.contact_type == 'single'){
-                    var old_session_content = dialog_handle(msg.from_id,msg.contact_type,'load');
-                    var new_session_content = old_session_content + msg_div;
-                    dialog_handle(msg.from_id,msg.contact_type,'refresh',new_session_content)
-                }else if(msg.contact_type == 'group'){
-                    var old_session_content = dialog_handle(msg.group_id,msg.contact_type,'load');
-                    var new_session_content = old_session_content + msg_div;
-                    dialog_handle(msg.group_id,msg.contact_type,'refresh',new_session_content)
-                }
-
-
+                    '<p class="msg-text">'+msg.msg+'</p></div>';
             }
 
 
-        });
+            if(msg.contact_type == 'single'){
+                var old_session_content = dialog_handle(msg.from_id,msg.contact_type,'load');
+                var new_session_content = old_session_content + msg_div;
+                dialog_handle(msg.from_id,msg.contact_type,'refresh',new_session_content)
+            }else if(msg.contact_type == 'group'){
+                var old_session_content = dialog_handle(msg.group_id,msg.contact_type,'load');
+                var new_session_content = old_session_content + msg_div;
+                dialog_handle(msg.group_id,msg.contact_type,'refresh',new_session_content)
+            }else if(msg.contact_type == 'friend_request'){
+                var old_session_content = dialog_handle(msg.from_id,msg.contact_type,'load');
+                var new_session_content = old_session_content + msg_div;
+                dialog_handle(msg.from_id,msg.contact_type,'refresh',new_session_content)
+            }
 
-        get_new_msg();
+
+        }
+
+
     });
 }
 
@@ -249,19 +345,58 @@ function add_msg_into_box(msg){
 }
 
 /*发送消息到后台*/
-function send_msg(msg,group_id){
+function send_msg(msg){
     var msg_dic = {
         'from_id': '{{ request.user.userprofile.id }}',
-        'to_id': $('#dialog-header-msg span').attr('contact_id'),
+        'to_id': $('#dialog-header-msg span').attr('contact_id'),/*如果是群聊，这里就是群id*/
         'from_name':'{{ request.user.userprofile.name }}',
         'contact_type': $('#dialog-header-msg span').attr('contact_type'),
-        'msg': msg
+        'msg': msg,
+        'group_id':$('#dialog-header-msg span').attr('contact_id'),
+        'group_name':$('#dialog-header-msg span').attr('contact_name'),
     }
-    if(group_id>0){
-        msg_dic['group_id'] = group_id;
-    }
+
     $.post('{% url "chat_send_msg" %}',{'data':JSON.stringify(msg_dic),'csrfmiddlewaretoken':$('input[name=csrfmiddlewaretoken]').val()},function(callback){
        console.log(callback)
+    });
+}
+
+/*发送好友请求*/
+function send_friend_request(ele){
+    var msg_dic = {
+        'from_id': '{{ request.user.userprofile.id }}',
+        'to_id': $(ele).parent().attr('contact_id'),
+        'from_name':'{{ request.user.userprofile.name }}',
+        'contact_type': 'friend_request',
+        'msg': '',
+        'group_id':0,
+        'group_name':'',
+    }
+    alert('好友申请已发送，请耐心等待！')
+    $.post('{% url "chat_send_msg" %}',{'data':JSON.stringify(msg_dic),'csrfmiddlewaretoken':$('input[name=csrfmiddlewaretoken]').val()},function(callback){
+        console.log(callback);
+        if(callback=='ok') {
+
+        }
+    });
+}
+/*通过好友请求*/
+function accept_friend_request(){
+    var msg_dic = {
+        'from_id': '{{ request.user.userprofile.id }}',
+        'to_id': $('#dialog-header-msg span[contact_type="friend_request"]').attr('contact_id'),
+        'from_name':'{{ request.user.userprofile.name }}',
+        'contact_type': 'friend_accept',
+        'msg': '',
+        'group_id':0,
+        'group_name':'',
+    }
+
+    $.post('{% url "chat_send_msg" %}',{'data':JSON.stringify(msg_dic),'csrfmiddlewaretoken':$('input[name=csrfmiddlewaretoken]').val()},function(callback){
+        console.log(callback);
+        if(callback=='ok') {
+            alert('好友添加成功！')
+        }
     });
 }
 
@@ -273,9 +408,20 @@ function switch_chatbox(ele) {
     var old_session_uid = $('#dialog-header-msg span').attr('contact_id'),
         old_session_type = $('#dialog-header-msg span').attr('contact_type');
 
+    /*在最近对话中添加条目*/
+    if($(ele).parent().attr('id') != 'recent_contact_list'){
+        add_recent_item(current_dialog_uid,current_dialog_title,current_dialog_type,current_dialog_uid,current_dialog_title)
+        if(current_dialog_type == 'single'){
+            $('#dialog-header-msg .glyphicon').removeClass('glyphicon-comment').addClass('glyphicon-user');
+        }else if(current_dialog_type == 'group'){
+            $('#dialog-header-msg .glyphicon').removeClass('glyphicon-user').addClass('glyphicon-comment');
+        }
+    }
+
+
     dialog_handle(old_session_uid,old_session_type,'dump');
     $('#dialog-content-box').html(dialog_handle(current_dialog_uid,current_dialog_type,'load'));
-    $('#dialog-header-msg span').attr('contact_id',current_dialog_uid).attr('contact_type',current_dialog_type).html(current_dialog_title)
+    $('#dialog-header-msg span').attr('contact_id',current_dialog_uid).attr('contact_type',current_dialog_type).attr('contact_name',current_dialog_title).html(current_dialog_title)
 
 }
 
@@ -295,5 +441,24 @@ function dialog_handle(contact_id,contact_type,action,data){
     }
 }
 
+function blink(elem, times, speed) {
+    if (times > 0 || times < 0) {
+        if ($(elem).hasClass("blink"))
+            $(elem).removeClass("blink");
+        else
+            $(elem).addClass("blink");
+    }
+
+    clearTimeout(function () {
+        blink(elem, times, speed);
+    });
+
+    if (times > 0 || times < 0) {
+        setTimeout(function () {
+            blink(elem, times, speed);
+        }, speed);
+        times -= .5;
+    }
+}
 </script>
 {% endblock %}

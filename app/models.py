@@ -6,6 +6,7 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=32)
     user_groups = models.ManyToManyField('UserGroup')
     friends = models.ManyToManyField('self',related_name='my_friends',blank=True)
+    online = models.BooleanField(default=False)
     def __str__(self):
         return self.name
 

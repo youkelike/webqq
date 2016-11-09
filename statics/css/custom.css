@@ -390,13 +390,14 @@ a:link{
   color:red;
 }
 #group-list .glyphicon-user{
-  margin-right:5px;
+    margin-right:5px;
 }
 #group-list .glyphicon-heart{
-  margin-right: -30px;}
+    margin-right: -30px;}
 #left-menu{
-  max-height: 500px;
-  overflow-y: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    user-select: none;
 }
 .msg-text{
     display: inline-block;
@@ -411,4 +412,13 @@ a:link{
     border: 1px solid #ccc;
     border-radius: 4px;
     max-width: 80%;
+}
+#recent_contact_list .glyphicon{
+    margin-right: 5px;
+}
+#dialog-content-box .modal-content{
+    width: 400px;
+}
+#dialog-content-box .modal-footer {
+    padding: 5px;
 }
