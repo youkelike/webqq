@@ -48,7 +48,7 @@
             <div id="contacts" class="bhoechie-tab-content active">
               <input type="text" class="form-control" placeholder="Search for friend">
               <div id="contact-list" class="list-group">
-                  {% for contact in request.user.userprofile.friends.select_related %}
+                  {% for contact in request.user.friends.select_related %}
                   <a status="false" contact_id="{{ contact.id }}" contact_name="{{ contact.name }}" contact_type="single" class="list-group-item contact-item">
                       <span><i class="glyphicon glyphicon-fire"></i>{{ contact.name }}</span>
                       <span class="pull-right badge hide">0</span>
@@ -60,17 +60,17 @@
             <div id="contacts_groups" class="bhoechie-tab-content ">
               <input type="text" class="form-control" placeholder="Search for group">
               <ul id="group-list" class="list-unstyled">
-                  {% for group in request.user.userprofile.group_members.select_related %}
+                  {% for group in request.user.group_members.select_related %}
                   <li status="false"  contact_type="group" contact_id="{{ group.id }}" contact_name="{{ group.name }}" class="contact-item">
                       <i class="toggle-members glyphicon glyphicon-plus"></i>
                       <span>{{ group.name }}({{ group.members.select_related|length }})</span>
                       <span class="pull-right badge hide">0</span>
                        <ul class="list-group hide group-members">
                        {% for member in group.members.select_related %}
-                           {% if request.user.userprofile.id != member.id %}
+                           {% if request.user.id != member.id %}
                            <li class="list-group-item" contact_type="single" contact_id="{{ member.id }}" contact_name="{{ member.name }}">
                                <i class="glyphicon glyphicon-user"></i>{{ member.name }}
-                               {% if member in request.user.userprofile.friends.select_related %}
+                               {% if member in request.user.friends.select_related %}
                                <i class="glyphicon glyphicon-heart pull-right friend"></i>
                                {% else %}
                                <i class="glyphicon glyphicon-heart pull-right" title="加好友"></i>
@@ -193,7 +193,7 @@ $(function(){
 /*定时从后台获取消息*/
 function get_new_msg(){
     //var current_contact_name = $('#dialog-header-msg span').text();
-    $.get('{% url "get_new_msg" %}',{'uid':'{{ request.user.userprofile.id }}'},function(callback){
+    $.get('{% url "get_new_msg" %}',{'uid':'{{ request.user.id }}'},function(callback){
         callback = JSON.parse(callback);
 
         /*处理对话消息*/
@@ -335,7 +335,7 @@ function add_msg_into_box(msg){
     var msg_div = '<div class="timeline-stat pull-right"><div class="timeline-icon">'+
                     '<i class="glyphicon glyphicon-user"></i>'+
                     '</div></div><div align="right" class="msg_box_right">' +
-                    '<p><span class="msg-text-head">{{ request.user.userprofile.name }}</span>'+
+                    '<p><span class="msg-text-head">{{ request.user.name }}</span>'+
                     '<span class="msg-text-head">'+new Date().toLocaleTimeString()+'</span></p>'+
                     '<p class="msg-text-right">'+msg+'</p></div>'
 
@@ -347,9 +347,9 @@ function add_msg_into_box(msg){
 /*发送消息到后台*/
 function send_msg(msg){
     var msg_dic = {
-        'from_id': '{{ request.user.userprofile.id }}',
+        'from_id': '{{ request.user.id }}',
         'to_id': $('#dialog-header-msg span').attr('contact_id'),/*如果是群聊，这里就是群id*/
-        'from_name':'{{ request.user.userprofile.name }}',
+        'from_name':'{{ request.user.name }}',
         'contact_type': $('#dialog-header-msg span').attr('contact_type'),
         'msg': msg,
         'group_id':$('#dialog-header-msg span').attr('contact_id'),
@@ -364,9 +364,9 @@ function send_msg(msg){
 /*发送好友请求*/
 function send_friend_request(ele){
     var msg_dic = {
-        'from_id': '{{ request.user.userprofile.id }}',
+        'from_id': '{{ request.user.id }}',
         'to_id': $(ele).parent().attr('contact_id'),
-        'from_name':'{{ request.user.userprofile.name }}',
+        'from_name':'{{ request.user.name }}',
         'contact_type': 'friend_request',
         'msg': '',
         'group_id':0,
@@ -383,9 +383,9 @@ function send_friend_request(ele){
 /*通过好友请求*/
 function accept_friend_request(){
     var msg_dic = {
-        'from_id': '{{ request.user.userprofile.id }}',
+        'from_id': '{{ request.user.id }}',
         'to_id': $('#dialog-header-msg span[contact_type="friend_request"]').attr('contact_id'),
-        'from_name':'{{ request.user.userprofile.name }}',
+        'from_name':'{{ request.user.name }}',
         'contact_type': 'friend_accept',
         'msg': '',
         'group_id':0,

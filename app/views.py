@@ -18,8 +18,8 @@ def acc_login(request):
             #登录动作
             login(request,user)
             #更新在线状态
-            user.userprofile.online = True
-            user.userprofile.save()
+            user.online = True
+            user.save()
             return HttpResponseRedirect('/chat/')
         else:
             login_err = 'Wrong username or password'
@@ -28,8 +28,8 @@ def acc_login(request):
 
 def acc_logout(request):
     #更新在线状态
-    request.user.userprofile.online = False
-    request.user.userprofile.save()
+    request.user.online = False
+    request.user.save()
     #登出
     logout(request)
     return HttpResponseRedirect('/')
@@ -55,7 +55,7 @@ def send_msg(request):
     elif contact_type == 'group':
         group_obj = models.QqGroup.objects.get(id=to_id)
         for member in group_obj.members.select_related():
-            if member.id != request.user.userprofile.id:
+            if member.id != request.user.id:
                 if str(member.id) not in global_msg_dic:
                     global_msg_dic[str(member.id)] = utils.Chat(request)
                 global_msg_dic[str(member.id)].msg_queue.put(data)
@@ -67,7 +67,7 @@ def send_msg(request):
         global_msg_dic[to_id].msg_queue.put(data)#把加上事件戳的消息对象放到队列
         print('\033[31;1mPush friend request into user [%s] queue\033[0m' % (user_obj.name))
     elif contact_type == 'friend_accept':
-        friend_obj = models.UserProfile.objects.get(id=request.user.userprofile.id);
+        friend_obj = models.UserProfile.objects.get(id=request.user.id);
         if friend_obj not in user_obj.friends.select_related():
             user_obj.friends.add(friend_obj)
             user_obj.save()

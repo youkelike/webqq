@@ -17,7 +17,7 @@ class Chat(object):
 
     #获取在线好友,和所属群，用于更新好友状态和所属群列表
     def get_contact_dic(self):
-        user_obj = models.UserProfile.objects.get(id=self.request.user.userprofile.id)
+        user_obj = models.UserProfile.objects.get(id=self.request.user.id)
         friend_dic = user_obj.friends.select_related().filter(online=True).values('id','name','online')
         group_dic = user_obj.group_members.select_related().values('id','name')
         contact_dic = {
@@ -43,6 +43,6 @@ class Chat(object):
                 print('------- no new message, going to wait 60 seconds ------')
                 new_msgs.append(self.msg_queue.get(timeout=60))
             except queue.Empty:
-                print('\033[31;1mTimeout, no message for user [%s]\033[0m' % self.request.user.userprofile.name)
-        print('\033[33;1mFound [%s] new messages for user [%s]\033[0m' % (len(new_msgs),self.request.user.userprofile.name))
+                print('\033[31;1mTimeout, no message for user [%s]\033[0m' % self.request.user.name)
+        print('\033[33;1mFound [%s] new messages for user [%s]\033[0m' % (len(new_msgs),self.request.user.name))
         return new_msgs

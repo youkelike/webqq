@@ -25,7 +25,7 @@
             <li>
                 {% if request.user.is_authenticated %}
                 <a id="drop3" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                {{ request.user }}
+                {{ request.user.name }}
                 <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="drop3">
